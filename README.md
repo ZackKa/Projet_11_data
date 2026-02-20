@@ -76,3 +76,31 @@ Si une erreur apparaît, vérifier que :
 - L’environnement puls_env est bien activé
 
 - Les dépendances ont bien été installées avec pip install -r requirements.txt
+
+## Import des données OpenAgenda
+
+Pour récupérer les événements publics récents (moins d’un an) et les sauvegarder localement, utilisez le script fourni (fetch_events.py).
+
+### Fonctionnalités du script
+
+- Récupère les événements via l’API OpenAgenda
+
+- Filtre par ville (par défaut : Paris) et par date (moins d’un an)
+
+- Sauvegarde les événements dans data/raw_events.json
+
+Exécution :
+```bash
+python fetch_events.py
+```
+
+Après exécution, vous devriez voir un message :
+```bash
+Récupération des événements...
+Récupérés jusqu'à 100 événements...
+...
+Total récupéré : XXX événements
+Données sauvegardées dans data/raw_events.json
+```
+
+Les données sont alors prêtes pour les étapes suivantes (prétraitement et vectorisation).

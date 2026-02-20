@@ -51,7 +51,7 @@ def fetch_all_events(city="Paris"):
         all_results.extend(results)    # Ajout des résultats de cette page à la liste totale
         offset += limit    # On passe à la page suivante en incrémentant l'offset
 
-        # Si on atteint ou dépasse le nombre total d'événements disponibles
+        # Si on atteint ou dépasse le nombre total d'événements disponibles, on break la boucle
         # 'total_count' est fourni par l'API et correspond au nombre total d'événements répondant au filtre
         if offset >= data.get("total_count", 0):
             break
