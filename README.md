@@ -3,6 +3,18 @@
 
 Ce projet s’inscrit dans la réalisation d’un Proof of Concept (POC) d’un système RAG (Retrieval-Augmented Generation) pour l’entreprise Puls-Events.
 
+Le POC permet :
+
+- De récupérer les événements publics récents via l’API OpenAgenda
+
+- De nettoyer et structurer ces données pour un usage NLP
+
+- De vectoriser les descriptions avec un modèle Mistral
+
+- D’indexer les vecteurs dans FAISS pour une recherche rapide par similarité
+
+- De générer des recommandations personnalisées via un chatbot orchestré avec LangChain
+
 Le système utilisera :
 
 - LangChain pour l’orchestration
@@ -17,6 +29,29 @@ Le système utilisera :
 
 Mettre en place un environnement Python reproductible contenant toutes les dépendances nécessaires au développement du système RAG.
 
+### Structure
+
+PULS-EVENTS/
+├─ data/
+│  ├─ raw_events.json
+│  ├─ clean_events.json
+│  ├─ chunks_events.json
+│  ├─ embeddings_events.json
+│  ├─ faiss_index.index
+│  └─ faiss_metadata.json
+├─ src/
+│  ├─ fetch_events.py
+│  ├─ preprocess.py
+│  ├─ chunking.py
+│  ├─ embed_chunks.py
+│  └─ index_faiss.py
+├─ test/
+│  ├─ test_env.py
+│  ├─ test_clean_events.py
+│  └─ search_test_index.py
+├─ requirements.txt
+└─ README.md
+
 ### Prérequis
 
 - Python 
@@ -24,7 +59,7 @@ Mettre en place un environnement Python reproductible contenant toutes les dépe
 - Conda (Anaconda)
 
 
-## 🧪 Création de l’environnement virtuel
+## Étape 1 - Création de l’environnement virtuel
 ### 1️ Création
 ```bash
 conda create -n puls_env python=3.10
@@ -48,11 +83,11 @@ pip install -r requirements.txt
 
 ## Vérification de l’installation
 
-Un fichier test_env.py est fourni pour vérifier que toutes les dépendances sont correctement installées.
+Un fichier `test_env.py` (dans le dossier test) est fourni pour vérifier que toutes les dépendances sont correctement installées.
 
-Exécution du test :
+Exécution du test sur le chemin du dossier test:
 ```bash
-python test_env.py
+pytest -v -s test_env.py
 ```
 
 Si tout est correctement installé, le terminal affichera :
@@ -73,11 +108,11 @@ pandas : X.X.X
 
 Si une erreur apparaît, vérifier que :
 
-- L’environnement puls_env est bien activé
+- L’environnement `puls_env` est bien activé
 
-- Les dépendances ont bien été installées avec pip install -r requirements.txt
+- Les dépendances ont bien été installées avec `pip install -r requirements.txt`
 
-## Import des données OpenAgenda
+## Étape 2 - Import des données OpenAgenda
 
 Pour récupérer les événements publics récents (moins d’un an) et les sauvegarder localement, utilisez le script fourni (fetch_events.py).
 
@@ -87,7 +122,7 @@ Pour récupérer les événements publics récents (moins d’un an) et les sauv
 
 - Filtre par ville (par défaut : Paris) et par date (moins d’un an)
 
-- Sauvegarde les événements dans data/raw_events.json
+- Sauvegarde les événements dans `data/raw_events.json`
 
 Exécution :
 ```bash
@@ -105,9 +140,9 @@ Données sauvegardées dans data/raw_events.json
 
 Les données sont alors prêtes pour les étapes suivantes (prétraitement et vectorisation).
 
-## Prétraitement et nettoyage des données
+## Étape 3 - Prétraitement et nettoyage des données
 
-Un script `preprocess_events.py` a été développé pour nettoyer et préparer les événements récupérés afin de les rendre exploitables pour la vectorisation et le système RAG.
+Un script `preprocess.py` a été développé pour nettoyer et préparer les événements récupérés afin de les rendre exploitables pour la vectorisation et le système RAG.
 
 ### Fonctionnalités principales
 
@@ -146,7 +181,7 @@ data/clean_events.json
 
 ### Exemple d’exécution
 ```bash
-python preprocess_events.py
+python preprocess.py
 ```
 
 Message attendu :
@@ -157,7 +192,7 @@ XXX événements nettoyés sauvegardés.
 
 ### Tests unitaires avec Pytest
 
-Pour garantir que le prétraitement a produit un dataset correct et exploitable, un script de tests test_clean_events.py a été développé avec pytest.
+Pour garantir que le prétraitement a produit un dataset correct et exploitable, un script de tests test_filtre_localisation.py a été développé avec pytest.
 
 #### Objectifs des tests
 
@@ -169,6 +204,214 @@ Pour garantir que le prétraitement a produit un dataset correct et exploitable,
 
 #### Exécution des tests
 ```bash
-pytest test_clean_events.py
+pytest -v -s test_filtre_localisation.py
 ```
 Le succès de tous les tests confirme que le dataset nettoyé est fiable et prêt pour les étapes suivantes (vectorisation et RAG).
+
+## Étape 4 : Découpage en chunks (Chunking)
+
+Après avoir nettoyé les événements, il est nécessaire de découper les textes consolidés (`text_for_embedding`) en morceaux plus petits, appelés chunks, pour faciliter la génération d’embeddings et la recherche vectorielle.
+
+### Objectifs
+
+- Gérer les limites de taille des modèles NLP.
+
+- Optimiser la recherche sémantique dans la base FAISS.
+
+- Conserver le contexte via un chevauchement entre les chunks.
+
+### Fichier et script
+
+Script : `chunking.py`
+
+Fichier produit : `data/chunks_events.json`
+
+### Fonctionnement
+
+1. Charge les événements nettoyés depuis `clean_events.json`.
+
+2. Utilise `RecursiveCharacterTextSplitter` de LangChain avec :
+
+ - `chunk_size = 800` caractères
+
+ - `chunk_overlap = 150` caractères
+
+3. Pour chaque événement, génère des chunks et conserve les métadonnées associées (titre, description, dates, lieu…).
+
+4. Sauvegarde tous les chunks dans `chunks_events.json`.
+
+Exemple d’exécution
+```bash
+python chunking.py
+```
+Message attendu :
+```bash
+Chargement des événements nettoyés...
+XXX événements chargés.
+Découpage en chunks...
+YYY chunks générés et sauvegardés.
+```
+
+## Étape 5 : Génération des embeddings
+
+Chaque chunk doit être transformé en vecteur numérique représentatif de son contenu, appelé embedding, afin de permettre une recherche par similarité dans la base FAISS.
+
+### Objectifs
+
+- Transformer les textes en vecteurs compréhensibles par l’IA.
+
+- Préparer les données pour l’index vectoriel.
+
+### Fichier et script
+
+Script : `embed_chunks.py`
+
+Fichier produit : `data/embeddings_events.json`
+
+### Fonctionnement
+
+1. Charge les chunks depuis `chunks_events.json`.
+
+2. Utilise le modèle Mistral via son API pour générer les embeddings.
+
+3. Traite les chunks par batches (ici 50 par batch) pour optimiser les requêtes API.
+
+4. Réessaie jusqu’à 3 fois en cas d’erreur pour éviter la perte de données.
+
+5. Ajoute chaque embedding au chunk correspondant.
+
+6. Sauvegarde le résultat final dans `embeddings_events.json`.
+
+Exemple d’exécution
+```bash
+python embed_chunks.py
+```
+Message attendu :
+```bash
+Chargement des chunks...
+XXX chunks chargés
+Génération des embeddings par batch de 50 chunks...
+Embeddings sauvegardés
+Shape embeddings : XXX
+```
+
+## Étape 6 : Construction de l’index FAISS
+
+Après avoir généré les embeddings des chunks, il est nécessaire de créer un index vectoriel FAISS pour permettre une recherche rapide par similarité.
+
+### Objectifs
+
+- Indexer tous les vecteurs d’embedding pour un accès efficace.
+
+- Conserver les métadonnées associées à chaque chunk (titre, description, date, lieu…).
+
+- Préparer la base pour des recherches sémantiques et des systèmes RAG.
+
+### Fichiers et scripts
+
+Script : `index_faiss.py`
+
+Fichiers produits :
+
+- `data/faiss_index.index` → index FAISS des vecteurs
+
+- `data/faiss_metadata.json` → métadonnées associées aux chunks
+
+### Fonctionnement
+
+1. Charge les embeddings depuis embeddings_events.json.
+
+2. Crée un index FAISS IndexFlatL2 (distance euclidienne) pour tous les vecteurs.
+
+3. Conserve uniquement les métadonnées pertinentes pour chaque chunk.
+
+4. Sauvegarde l’index FAISS et le fichier de métadonnées.
+
+Exemple d’exécution
+```bash
+python index_faiss.py
+```
+Message attendu :
+```bash
+Chargement des embeddings...
+XXX chunks chargés
+Préparation des vecteurs...
+Dimension des vecteurs : 1536
+Nombre de vecteurs : XXX
+Création de l'index FAISS (IndexFlatL2)...
+Index construit avec succès.
+Index sauvegardé : data/faiss_index.index
+Métadonnées sauvegardées : data/faiss_metadata.json
+Index FAISS prêt.
+```
+
+## Étape 7 : Test de recherche dans l’index
+
+Une fois l’index créé, il est recommandé de tester la recherche par requête pour vérifier que tout fonctionne correctement.
+
+### Objectifs
+
+- Vérifier l’intégrité de l’index et des embeddings.
+
+- Tester des requêtes exemples pour retrouver les événements pertinents.
+
+- Obtenir les résultats avec leur distance et métadonnées.
+
+### Fichier et script
+
+Script : `search_test_index.py` dans le dossier test 
+
+### Fonctionnement
+
+1. Charge l’index FAISS (`faiss_index.index`) et les métadonnées (`faiss_metadata.json`).
+
+2. Génère l’embedding d’une requête utilisateur via le modèle Mistral.
+
+3. Cherche les TOP_K chunks les plus proches dans l’index.
+
+4. Retourne les résultats avec :
+
+- titre de l’événement
+
+- ville
+
+ -date
+
+- distance vectorielle
+
+### Requêtes de test
+
+Dans le script, plusieurs requêtes sont déjà présentes et commentées :
+```bash 
+# query = "concert jazz Paris"
+# query = "exposition art contemporain"
+# query = "festival gratuit famille"
+query = "conférence intelligence artificielle"
+```
+Vous pouvez décommenter une requête à la fois pour tester différents types d’événements.
+
+Vous pouvez également remplacer query par votre propre chaîne de recherche pour expérimenter avec vos propres requêtes.
+
+Exemple d’exécution
+```bash
+python search_test_index.py
+```
+Message attendu :
+```bash
+Chargement de l'index FAISS...
+Chargement des métadonnées...
+Requête test : conférence intelligence artificielle
+
+Résultat 1
+Titre : Conférence IA & Innovation
+Ville : Paris
+Date : 2026-03-15T09:00:00+00:00
+Distance : 0.0123
+--------------------------------------------------
+Résultat 2
+Titre : Atelier Machine Learning
+Ville : Paris
+Date : 2026-04-01T14:00:00+00:00
+Distance : 0.0251
+...
+```

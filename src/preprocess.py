@@ -1,3 +1,5 @@
+# Script de prétraitement (nettoyage) des données
+
 import json
 import re
 from pathlib import Path
@@ -41,47 +43,49 @@ def clean_html(value):
     - remplaçant les retours à la ligne par des espaces
     - supprimant les espaces multiples
     """
-    # Si ce n'est pas une chaîne de caractères, on renvoie tel quel
+    # isinstance() est une fonction Python qui vérifie le type d'un objet
+    # Si ce n'est pas une chaîne de caractères (str), on renvoie tel quel
     if not isinstance(value, str):
         return value
 
     # Si la chaîne ne contient pas de balises HTML
+    # Sinon (si du HTML présent), on laisse BeautifulSoup s'occuper du nettoyage.
     if "<" not in value and ">" not in value:
         value = re.sub(r"[\r\n]+", " ", value)  # On remplace les retours à la ligne par un espace
-        return re.sub(r"\s+", " ", value).strip()   # On réduit les espaces multiples à un seul espace
+        return re.sub(r"\s+", " ", value).strip()   # re.sub() : remplace tous les espaces multiples ou retours à la ligne par un seul espace. # .strip() : supprime les espaces au début et à la fin de la chaîne
 
     # Si contient du HTML → on parse (analyse) le HTML
-    soup = BeautifulSoup(value, "html.parser")
-    text = soup.get_text(separator=" ")  # On extrait le texte du HTML
+    soup = BeautifulSoup(value, "html.parser")  # "html.parser" est le parser HTML natif de Python, qui comprend les balises et la structure HTML
+    text = soup.get_text(separator=" ")  # get_text() extrait le texte visible, en supprimant toutes les balises HTML. separator met un espace entre les textes
 
     # Supprimer les retours ligne
     text = re.sub(r"[\r\n]+", " ", text)  # On remplace les retours à la ligne par un espace
 
     # Nettoyage espaces
-    text = re.sub(r"\s+", " ", text).strip()  # On réduit les espaces multiples à un seul espace
+    text = re.sub(r"\s+", " ", text).strip()  # re.sub() : remplace tous les espaces multiples ou retours à la ligne par un seul espace. # .strip() : supprime les espaces au début et à la fin de la chaîne
 
     return text  # On renvoie le texte nettoyé
 
 
-# -------------------------------
-# Fonction pour nettoyer tous les champs
-# -------------------------------
-def clean_all_fields(data):
-    """
-    Nettoie récursivement toutes les chaînes de caractères d'un dictionnaire ou d'une liste.
-    - Si c'est un dict, on nettoie chaque valeur
-    - Si c'est une liste, on nettoie chaque élément
-    - Si c'est une chaîne, on applique clean_html
-    - Sinon, on renvoie tel quel
-    """
-    if isinstance(data, dict):
-        return {k: clean_all_fields(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [clean_all_fields(item) for item in data]
-    elif isinstance(data, str):
-        return clean_html(data)
-    else:
-        return data
+# # -------------------------------
+# # Fonction pour nettoyer tous les champs
+# # -------------------------------
+# def clean_all_fields(data):
+#     """
+#     Nettoie récursivement toutes les chaînes de caractères d'un dictionnaire ou d'une liste.
+#     - Si c'est un dict, on nettoie chaque valeur
+#     - Si c'est une liste, on nettoie chaque élément
+#     - Si c'est une chaîne, on applique clean_html
+#     - Sinon, on renvoie tel quel
+#     """
+#     if isinstance(data, dict):
+#         return {k: clean_all_fields(v) for k, v in data.items()}
+#     elif isinstance(data, list):
+#         return [clean_all_fields(item) for item in data]
+#     elif isinstance(data, str):
+#         return clean_html(data)
+#     else:
+#         return data
 
 
 # -------------------------------
@@ -92,7 +96,9 @@ def validate_date(date_str):
     Vérifie si une date est valide et la convertit en format ISO standard.
     - date_str : chaîne de caractères représentant une date
     - Renvoie : date formatée "YYYY-MM-DDTHH:MM:SS+00:00" ou None si invalide
+    - datetime.fromisoformat(...) : transforme la chaîne en objet datetime Python. Permet de manipuler ou reformater la date facilement
     """
+    #Vérifie si la chaîne est vide ou None
     if not date_str:
         return None
     try:
@@ -105,7 +111,7 @@ def validate_date(date_str):
 # -------------------------------
 # Fonction pour charger les données brutes
 # -------------------------------
-def load_raw_data():
+def load_raw_data():    
     """
     Charge les données brutes depuis le fichier JSON.
     """
@@ -128,6 +134,7 @@ def preprocess_events(events):
     clean_events = []  # On initialise une liste pour stocker les événements nettoyés
     seen_hashes = set()  # On initialise un ensemble pour stocker les hashs des événements déjà traités, pour éviter les doublons
 
+    # Parcours de tous les événements bruts
     for event in events:
 
         # NETTOYAGE COMPLET DE TOUS LES CHAMPS
@@ -135,7 +142,9 @@ def preprocess_events(events):
 
         # Nettoyage uniquement des champs texte éditoriaux
         for field in TEXT_FIELDS_TO_CLEAN:
+            # si le champ existe dans le dictionnaire event (field in event) et le champ contient quelque chose (non vide / non None) (event[field])
             if field in event and event[field]:
+                # Si le champ existe et contient quelque chose, on le nettoie avec la fonction clean_html
                 event[field] = clean_html(event[field])
 
         # Vérification des champs obligatoires
@@ -158,7 +167,7 @@ def preprocess_events(events):
         if not firstdate_begin:
             continue
 
-        # Création d'un hash pour détecter les doublons exacts
+        # Création d'un hash pour détecter les doublons exacts (hash = chaîne de caractères unique qui identifie de manière unique un événement)
         event_hash = (
             uid, title, short_desc, long_desc,
             firstdate_begin, firstdate_end,
@@ -168,10 +177,10 @@ def preprocess_events(events):
             event.get("location_city")
         )
 
-        # On ignore l'événement si le hash existe déjà
+        # si un autre événement avec exactement les mêmes valeurs existe, on le considère comme un doublon
         if event_hash in seen_hashes:
             continue
-        seen_hashes.add(event_hash)
+        seen_hashes.add(event_hash)  # on ajoute le hash à seen_hashes pour le marquer comme déjà traité
         
         # Construction du texte pour embeddings
 
@@ -236,6 +245,11 @@ Date fin : {firstdate_end}"""
 
         # Remplacer tous les None par ""
         clean_event = {k: (v if v is not None else "") for k, v in clean_event.items()}
+        #k = la clé du dictionnaire, par exemple "title_fr" ou "age_min".
+        # v = la valeur associée à cette clé, par exemple "Concert" ou None.
+        # (v if v is not None else "") → c’est une condition :
+        # si v n’est pas None, on garde v tel quel
+        # si v est None, on remplace par une chaîne vide "".
 
         # On ajoute l'événement nettoyé à la liste des événements nettoyés
         clean_events.append(clean_event)
@@ -250,8 +264,13 @@ def save_clean_data(data):
     Sauvegarde les données nettoyées dans un fichier JSON.
     """
     CLEAN_PATH.parent.mkdir(parents=True, exist_ok=True)  # On crée le dossier parent si il n'existe pas
+    # CLEAN_PATH.parent correspond au dossier parent (../data)
+    # parents=True → crée aussi tous les dossiers parents manquants
+    # exist_ok=True → ne renvoie pas d’erreur si le dossier existe déjà
     with open(CLEAN_PATH, "w", encoding="utf-8") as f:  # On ouvre le fichier JSON en écriture
         json.dump(data, f, ensure_ascii=False, indent=4)
+        # ensure_ascii=False → garde les caractères spéciaux (é, à, ü) lisibles
+        # indent=4 → formate le JSON avec 4 espaces pour qu’il soit facile à lire
 
 
 if __name__ == "__main__":

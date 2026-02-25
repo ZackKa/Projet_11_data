@@ -1,3 +1,5 @@
+# Script de récupération des données
+
 import requests  # Pour faire des requêtes HTTP vers l'API
 import json      # Pour manipuler et sauvegarder les données au format JSON
 from datetime import datetime, timedelta  # Pour manipuler les dates si nécessaire
@@ -26,7 +28,7 @@ def fetch_all_events(city="Paris"):
     start_date = end_date - timedelta(days=365)
 
     all_results = []    # Liste qui contiendra tous les résultats cumulés
-    limit = 100   # Limite de résultats par requête 
+    limit = 100   # limit définit le nombre maximum d’éléments récupérés par requête API
     offset = 0     # Offset = position à partir de laquelle récupérer les événements
 
     # Boucle infinie jusqu'à ce qu'on ait récupéré tous les événements
@@ -43,12 +45,12 @@ def fetch_all_events(city="Paris"):
             raise Exception(f"Erreur API : {response.status_code}") # En cas d'erreur, on stoppe et on affiche le code
 
         data = response.json()    # Conversion de la réponse JSON en dictionnaire Python
-        results = data.get("results", [])    # Récupération de la liste des événements de cette page
+        results = data.get("results", [])    # Récupération de la liste des événements de cette page. "results" car API structure sa réponse comme ça.
 
         if not results:
             break    # Si cette page est vide, on a tout récupéré → on sort de la boucle
 
-        all_results.extend(results)    # Ajout des résultats de cette page à la liste totale
+        all_results.extend(results)    # Ajout des résultats de cette page et les fusionne dans la liste totale all_results
         offset += limit    # On passe à la page suivante en incrémentant l'offset
 
         # Si on atteint ou dépasse le nombre total d'événements disponibles, on break la boucle

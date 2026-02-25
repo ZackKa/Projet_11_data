@@ -1,3 +1,7 @@
 .env
 test_pour_moi/
 raw_events.json
+data/
+req
+__pycache__/
+.pytest_cache/
