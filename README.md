@@ -30,7 +30,7 @@ Le système utilisera :
 Mettre en place un environnement Python reproductible contenant toutes les dépendances nécessaires au développement du système RAG.
 
 ### Structure
-
+```
 PULS-EVENTS/
 ├─ data/
 │  ├─ raw_events.json
@@ -51,7 +51,7 @@ PULS-EVENTS/
 │  └─ search_test_index.py
 ├─ requirements.txt
 └─ README.md
-
+```
 ### Prérequis
 
 - Python 
@@ -375,7 +375,7 @@ Script : `search_test_index.py` dans le dossier test
 
 - ville
 
- -date
+- date
 
 - distance vectorielle
 
