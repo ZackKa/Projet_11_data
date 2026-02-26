@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 CLEAN_PATH = Path("../data/clean_events.json")
 
-# Date minimale autorisée
+# Date minimale autorisée (dans mon cas, j’ai défini une date correspondant à 1 an avant la date à laquelle j’ai extrait les données)
 MIN_DATE = datetime(2025, 2, 17, tzinfo=timezone.utc)
 
 # -------------------------------

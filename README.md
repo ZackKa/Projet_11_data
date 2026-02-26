@@ -1,7 +1,14 @@
 # POC RAG – Puls-Events
-## Étape 1 : Configuration de l’environnement de développement
 
-Ce projet s’inscrit dans la réalisation d’un Proof of Concept (POC) d’un système RAG (Retrieval-Augmented Generation) pour l’entreprise Puls-Events.
+## Présentation du projet
+
+Ce projet constitue un Proof of Concept (POC) pour l’entreprise Puls-Events.
+L’objectif est de démontrer la faisabilité d’un système de recommandation d’événements culturels basé sur une architecture RAG (Retrieval-Augmented Generation).
+
+Le périmètre géographique retenu est : Paris.
+Les événements intégrés sont récents (moins d’un an) ou à venir.
+
+## Étape 1 : Configuration de l’environnement de développement
 
 Le POC permet :
 
@@ -29,6 +36,19 @@ Le système utilisera :
 
 Mettre en place un environnement Python reproductible contenant toutes les dépendances nécessaires au développement du système RAG.
 
+## Architecture du système
+
+Pipeline :
+
+OpenAgenda API
+→ Nettoyage & normalisation
+→ Chunking
+→ Embeddings
+→ Indexation FAISS
+→ Retriever LangChain
+→ LLM Mistral
+→ Réponse utilisateur
+
 ### Structure
 ```
 PULS-EVENTS/
@@ -44,17 +64,20 @@ PULS-EVENTS/
 │  ├─ preprocess.py
 │  ├─ chunking.py
 │  ├─ embed_chunks.py
-│  └─ index_faiss.py
+|  ├─ index_faiss.py
+|  ├─ build_vector_db.py (script qui lance toutes les étapes précédentes en une commande)
+│  └─ rag.py
 ├─ test/
 │  ├─ test_env.py
 │  ├─ test_clean_events.py
-│  └─ search_test_index.py
+│  └─ test_search_index.py
+├─ .env (à créer)
 ├─ requirements.txt
 └─ README.md
 ```
 ### Prérequis
 
-- Python 
+- Python 3.10
 
 - Conda (Anaconda)
 
@@ -79,6 +102,7 @@ pip install --upgrade pip
 ```bash
 pip install -r requirements.txt
 ```
+Attention si requirements provoque une erreur, il faut changer la ligne qui ressemble à `packaging @ file:///C:/...` dans le fichier `requirements.txt`, par juste cette ligne `packaging`.
 
 
 ## Vérification de l’installation
@@ -124,7 +148,9 @@ Pour récupérer les événements publics récents (moins d’un an) et les sauv
 
 - Sauvegarde les événements dans `data/raw_events.json`
 
+
 Exécution :
+Créer un dossier data a la racine du projet puis lancer la commande suivante
 ```bash
 python fetch_events.py
 ```
@@ -268,6 +294,10 @@ Script : `embed_chunks.py`
 
 Fichier produit : `data/embeddings_events.json`
 
+### Note
+
+Créer une clé API sur mistral et la mettre dans un fichier .env avec `MISTRAL_API_KEY=Votre_clé_api`
+
 ### Fonctionnement
 
 1. Charge les chunks depuis `chunks_events.json`.
@@ -359,7 +389,7 @@ Une fois l’index créé, il est recommandé de tester la recherche par requêt
 
 ### Fichier et script
 
-Script : `search_test_index.py` dans le dossier test 
+Script : `test_search_index.py` dans le dossier test 
 
 ### Fonctionnement
 
@@ -394,7 +424,7 @@ Vous pouvez également remplacer query par votre propre chaîne de recherche pou
 
 Exemple d’exécution
 ```bash
-python search_test_index.py
+pytest -v -s test_search_index.py
 ```
 Message attendu :
 ```bash
@@ -415,3 +445,97 @@ Date : 2026-04-01T14:00:00+00:00
 Distance : 0.0251
 ...
 ```
+
+## Étape 8 : Automatisation du pipeline avec build_vector_db.py
+
+Pour simplifier et centraliser le processus de préparation des données et de construction de la base vectorielle, toutes les étapes précédentes sont automatisées dans un script unique :
+```bash
+python build_vector_db.py
+```
+Ce script exécute automatiquement :
+
+- La récupération des événements (fetch_events.py)
+
+- Le prétraitement et le nettoyage des événements (preprocess.py)
+
+- Le découpage des textes en chunks (chunking.py)
+
+- La génération des embeddings pour chaque chunk (embed_chunks.py)
+
+- La création de l’index FAISS et la sauvegarde des métadonnées associées (index_faiss.py)
+
+À l’issue de l’exécution, une base vectorielle FAISS complète et prête à l’emploi est produite, incluant tous les chunks avec leurs embeddings et métadonnées. Cette base est directement exploitable pour la recherche sémantique et pour le système RAG.
+
+Cette automatisation garantit un pipeline reproductible, cohérent et rapide, minimisant les erreurs et facilitant la mise à jour des événements.
+
+
+## Étape 9 : Intégration RAG et Chatbot
+
+Cette étape consiste à exploiter la base vectorielle FAISS construite précédemment pour fournir un assistant capable de recommander des événements culturels via un système RAG (Retrieval-Augmented Generation).
+
+Le script est `rag.py`. Il permet de :
+
+- Charger l’index FAISS et les métadonnées associées (faiss_index.index et faiss_metadata.json).
+
+- Reconstruire les documents à partir des chunks indexés.
+
+- Créer un vectorstore LangChain pour l’interrogation par similarité.
+
+- Configurer un LLM Mistral pour la génération de réponses basées sur les documents récupérés.
+
+- Définir un prompt structuré pour répondre uniquement sur les événements culturels à Paris, en affichant : Titre, Date, Lieu et Description.
+
+- Construire une chaîne RAG combinant le retriever et le LLM.
+
+- Fournir une interface interactive où l’utilisateur peut poser des questions et obtenir des réponses contextualisées.
+
+### Fonctionnement
+
+- Le retriever recherche les chunks les plus pertinents pour chaque question.
+
+- Le LLM génère une réponse structurée en utilisant uniquement les informations extraites des chunks récupérés.
+
+- Les sources utilisées pour générer la réponse sont affichées pour plus de transparence.
+
+Exemple d’exécution
+```bash
+python rag.py
+```
+Exemple de sortie attendue :
+```bash
+Chatbot événements Paris prêt !
+Tape 'exit' pour quitter.
+
+Votre question : Quels concerts de jazz ont lieu à Paris ce mois-ci ?
+
+Réponse :
+
+Titre : Jazz Night au Sunset
+Date : 2026-03-12T20:00:00+00:00
+Lieu : Sunset Jazz Club, 3 Rue des Lombards, Paris
+Description : Soirée jazz avec le groupe XYZ. Information non disponible pour certains détails.
+
+Sources utilisées :
+- Jazz Night au Sunset
+- Festival Jazz à la Villette
+
+--------------------------------------------------
+```
+Objectifs de cette étape
+
+- Permettre des recherches sémantiques et des recommandations contextuelles.
+
+- Garantir que le LLM ne génère des réponses que sur les événements culturels à Paris, en utilisant les données indexées.
+
+- Fournir une interface interactive simple pour tester et exploiter la base vectorielle.
+
+## Lancer le projet complet
+
+Au lieu de lancer chaque script du dossier Src l'un après l'autre, une solution plus simple est disponible.
+Après création d'un dossier data et de l'ajout de la clé API dans un fichier .env, les commandes à exécuter sont :
+
+1. Construire la base vectorielle :
+   python build_vector_db.py
+
+2. Lancer le chatbot :
+   python rag.py
