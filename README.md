@@ -69,7 +69,7 @@ PULS-EVENTS/
 │  └─ rag.py
 ├─ test/
 │  ├─ test_env.py
-│  ├─ test_clean_events.py
+│  ├─ test_filtre_localisation.py
 │  └─ test_search_index.py
 ├─ .env (à créer)
 ├─ requirements.txt
@@ -82,7 +82,7 @@ PULS-EVENTS/
 - Conda (Anaconda)
 
 
-## Étape 1 - Création de l’environnement virtuel
+## Création de l’environnement virtuel
 ### 1️ Création
 ```bash
 conda create -n puls_env python=3.10
@@ -448,7 +448,8 @@ Distance : 0.0251
 
 ## Étape 8 : Automatisation du pipeline avec build_vector_db.py
 
-Pour simplifier et centraliser le processus de préparation des données et de construction de la base vectorielle, toutes les étapes précédentes sont automatisées dans un script unique :
+Pour simplifier et centraliser le processus de préparation des données et de construction de la base vectorielle, toutes les étapes précédentes sont automatisées dans un script unique.
+Avant d’exécuter ce script, assurez-vous que le dossier data/ existe et que .env contient MISTRAL_API_KEY.
 ```bash
 python build_vector_db.py
 ```
@@ -497,7 +498,9 @@ Le script est `rag.py`. Il permet de :
 
 - Les sources utilisées pour générer la réponse sont affichées pour plus de transparence.
 
-Exemple d’exécution
+Exemple d’exécution : 
+
+!!! Assurez-vous que `build_vector_db.py` a été exécuté et que les fichiers `faiss_index.index` et `faiss_metadata.json` sont présents avant de lancer `rag.py`.
 ```bash
 python rag.py
 ```
@@ -532,10 +535,19 @@ Objectifs de cette étape
 ## Lancer le projet complet
 
 Au lieu de lancer chaque script du dossier Src l'un après l'autre, une solution plus simple est disponible.
-Après création d'un dossier data et de l'ajout de la clé API dans un fichier .env, les commandes à exécuter sont :
+Après création d'un dossier data et de l'ajout de la clé API Mistral dans un fichier .env, les commandes à exécuter sont :
 
 1. Construire la base vectorielle :
    python build_vector_db.py
 
 2. Lancer le chatbot :
    python rag.py
+
+
+## Conclusion
+
+Ce POC démontre la faisabilité d’un système de recommandation d’événements culturels basé sur une architecture RAG.
+
+Grâce à la récupération, au nettoyage et à la vectorisation des données, à l’indexation FAISS et à l’intégration avec un LLM Mistral orchestré par LangChain, il est possible de fournir des recommandations personnalisées et contextuelles pour des événements à Paris. 
+
+Ce projet établit une base solide pour étendre le système à d’autres villes, types d’événements ou modèles NLP (Natural Language Processing, ou traitement automatique du langage naturel, qui permet aux ordinateurs de comprendre, analyser et générer du langage humain), et constitue un exemple concret de l’utilisation de l’IA pour enrichir l’expérience utilisateur dans le domaine culturel.

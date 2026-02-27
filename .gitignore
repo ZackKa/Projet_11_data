@@ -1,6 +1,7 @@
 .env
 test_pour_moi/
 raw_events.json
+clean_events.json
 data/
 req
 __pycache__/
