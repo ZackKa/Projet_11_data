@@ -66,28 +66,6 @@ def clean_html(value):
 
     return text  # On renvoie le texte nettoyé
 
-
-# # -------------------------------
-# # Fonction pour nettoyer tous les champs
-# # -------------------------------
-# def clean_all_fields(data):
-#     """
-#     Nettoie récursivement toutes les chaînes de caractères d'un dictionnaire ou d'une liste.
-#     - Si c'est un dict, on nettoie chaque valeur
-#     - Si c'est une liste, on nettoie chaque élément
-#     - Si c'est une chaîne, on applique clean_html
-#     - Sinon, on renvoie tel quel
-#     """
-#     if isinstance(data, dict):
-#         return {k: clean_all_fields(v) for k, v in data.items()}
-#     elif isinstance(data, list):
-#         return [clean_all_fields(item) for item in data]
-#     elif isinstance(data, str):
-#         return clean_html(data)
-#     else:
-#         return data
-
-
 # -------------------------------
 # Fonction pour valider et formater une date
 # -------------------------------
@@ -199,16 +177,6 @@ Date fin : {firstdate_end}"""
         text_for_embedding = re.sub(r"\s+", " ", text_for_embedding).strip()
         # Éviter les doubles points accidentels
         text_for_embedding = re.sub(r"\.\s*\.", ".", text_for_embedding)
-
-
-        # # Remplacer None par ""
-        # clean_event = {k: (v if v is not None else "") for k, v in event.items()}
-
-        # clean_event["text_for_embedding"] = text_for_embedding
-        # clean_event["firstdate_begin"] = firstdate_begin
-        # clean_event["firstdate_end"] = firstdate_end
-        # clean_event["lastdate_begin"] = lastdate_begin
-        # clean_event["lastdate_end"] = lastdate_end
 
         # Création du dictionnaire final pour l'événement
         clean_event = {
