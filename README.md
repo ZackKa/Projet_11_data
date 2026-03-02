@@ -39,7 +39,7 @@ Mettre en place un environnement Python reproductible contenant toutes les dépe
 ## Architecture du système
 
 Pipeline :
-
+```
 OpenAgenda API
 → Nettoyage & normalisation
 → Chunking
@@ -48,7 +48,7 @@ OpenAgenda API
 → Retriever LangChain
 → LLM Mistral
 → Réponse utilisateur
-
+```
 ### Structure
 ```
 PULS-EVENTS/
