@@ -28,7 +28,7 @@ Le système utilisera :
 
 - Mistral API via mistralai
 
-- FAISS (CPU) pour la base vectorielle
+- FAISS pour la base vectorielle
 
 - OpenAgenda API pour la récupération des événements
 
@@ -93,7 +93,7 @@ conda activate puls_env
 ```
 ## Installation des dépendances
 
-Les dépendances sont centralisées dans le fichier requirements.txt.
+Les dépendances sont centralisées dans le fichier `requirements.txt`.
 
 Installation :
 ```bash
@@ -138,7 +138,7 @@ Si une erreur apparaît, vérifier que :
 
 ## Étape 2 - Import des données OpenAgenda
 
-Pour récupérer les événements publics récents (moins d’un an) et les sauvegarder localement, utilisez le script fourni (fetch_events.py).
+Pour récupérer les événements publics récents (moins d’un an) et les sauvegarder localement, utilisez le script fourni (`fetch_events.py`).
 
 ### Fonctionnalités du script
 
@@ -150,7 +150,7 @@ Pour récupérer les événements publics récents (moins d’un an) et les sauv
 
 
 Exécution :
-Créer un dossier data a la racine du projet puis lancer la commande suivante
+Créer un dossier `data` a la racine du projet puis lancer la commande suivante
 ```bash
 python fetch_events.py
 ```
@@ -218,7 +218,7 @@ XXX événements nettoyés sauvegardés.
 
 ### Tests unitaires avec Pytest
 
-Pour garantir que le prétraitement a produit un dataset correct et exploitable, un script de tests test_filtre_localisation.py a été développé avec pytest.
+Pour garantir que le prétraitement a produit un dataset correct et exploitable, un script de tests `test_filtre_localisation.py` a été développé avec pytest.
 
 #### Objectifs des tests
 
@@ -296,7 +296,7 @@ Fichier produit : `data/embeddings_events.json`
 
 ### Note
 
-Créer une clé API sur mistral et la mettre dans un fichier .env avec `MISTRAL_API_KEY=Votre_clé_api`
+Créer une clé API sur mistral et la mettre dans un fichier `.env` avec `MISTRAL_API_KEY=Votre_clé_api`
 
 ### Fonctionnement
 
@@ -351,7 +351,7 @@ Fichiers produits :
 
 1. Charge les embeddings depuis embeddings_events.json.
 
-2. Crée un index FAISS IndexFlatL2 (distance euclidienne) pour tous les vecteurs.
+2. Crée un index FAISS `IndexFlatL2` (distance euclidienne) pour tous les vecteurs.
 
 3. Conserve uniquement les métadonnées pertinentes pour chaque chunk.
 
@@ -389,7 +389,7 @@ Une fois l’index créé, il est recommandé de tester la recherche par requêt
 
 ### Fichier et script
 
-Script : `test_search_index.py` dans le dossier test 
+Script : `test_search_index.py` dans le dossier `test`
 
 ### Fonctionnement
 
@@ -397,7 +397,7 @@ Script : `test_search_index.py` dans le dossier test
 
 2. Génère l’embedding d’une requête utilisateur via le modèle Mistral.
 
-3. Cherche les TOP_K chunks les plus proches dans l’index.
+3. Cherche les `TOP_K` chunks les plus proches dans l’index.
 
 4. Retourne les résultats avec :
 
@@ -446,24 +446,24 @@ Distance : 0.0251
 ...
 ```
 
-## Étape 8 : Automatisation du pipeline avec build_vector_db.py
+## Étape 8 : Automatisation du pipeline avec `build_vector_db.py`
 
 Pour simplifier et centraliser le processus de préparation des données et de construction de la base vectorielle, toutes les étapes précédentes sont automatisées dans un script unique.
-Avant d’exécuter ce script, assurez-vous que le dossier data/ existe et que .env contient MISTRAL_API_KEY.
+Avant d’exécuter ce script, assurez-vous que le dossier `data/` existe et que `.env` contient `MISTRAL_API_KEY` avec votre clé.
 ```bash
 python build_vector_db.py
 ```
 Ce script exécute automatiquement :
 
-- La récupération des événements (fetch_events.py)
+- La récupération des événements (`fetch_events.py`)
 
-- Le prétraitement et le nettoyage des événements (preprocess.py)
+- Le prétraitement et le nettoyage des événements (`preprocess.py`)
 
-- Le découpage des textes en chunks (chunking.py)
+- Le découpage des textes en chunks (`chunking.py`)
 
-- La génération des embeddings pour chaque chunk (embed_chunks.py)
+- La génération des embeddings pour chaque chunk (`embed_chunks.py`)
 
-- La création de l’index FAISS et la sauvegarde des métadonnées associées (index_faiss.py)
+- La création de l’index FAISS et la sauvegarde des métadonnées associées (`index_faiss.py`)
 
 À l’issue de l’exécution, une base vectorielle FAISS complète et prête à l’emploi est produite, incluant tous les chunks avec leurs embeddings et métadonnées. Cette base est directement exploitable pour la recherche sémantique et pour le système RAG.
 
@@ -476,7 +476,7 @@ Cette étape consiste à exploiter la base vectorielle FAISS construite précéd
 
 Le script est `rag.py`. Il permet de :
 
-- Charger l’index FAISS et les métadonnées associées (faiss_index.index et faiss_metadata.json).
+- Charger l’index FAISS et les métadonnées associées (`faiss_index.index` et `faiss_metadata.json`).
 
 - Reconstruire les documents à partir des chunks indexés.
 
@@ -484,7 +484,7 @@ Le script est `rag.py`. Il permet de :
 
 - Configurer un LLM Mistral pour la génération de réponses basées sur les documents récupérés.
 
-- Définir un prompt structuré pour répondre uniquement sur les événements culturels à Paris, en affichant : Titre, Date, Lieu et Description.
+- Définir un prompt structuré pour répondre uniquement sur les événements culturels à Paris, en affichant : `Titre, Date, Lieu et Description.`
 
 - Construire une chaîne RAG combinant le retriever et le LLM.
 
@@ -532,17 +532,19 @@ Objectifs de cette étape
 
 - Fournir une interface interactive simple pour tester et exploiter la base vectorielle.
 
-## Lancer le projet complet
+## Lancer le projet complet (Rappel)
 
-Au lieu de lancer chaque script du dossier Src l'un après l'autre, une solution plus simple est disponible.
-Après création d'un dossier data et de l'ajout de la clé API Mistral dans un fichier .env, les commandes à exécuter sont :
+Rappel : Pour faire simple, au lieu de lancer chaque script du dossier Src l'un après l'autre, une solution plus simple est disponible.
+Après création d'un dossier data et de l'ajout de la clé API Mistral dans un fichier `.env`, les commandes à exécuter sont :
 
 1. Construire la base vectorielle :
+```bash
    python build_vector_db.py
-
+```
 2. Lancer le chatbot :
+```bash
    python rag.py
-
+```
 
 ## Conclusion
 
