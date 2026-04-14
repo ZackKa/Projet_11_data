@@ -1,16 +1,16 @@
-import os
-import json
-from pathlib import Path
-import faiss
-from dotenv import load_dotenv
+import os                 # Pour accéder aux variables d'environnement (clé API, chemins, etc.)
+import json               # Pour lire et écrire les fichiers JSON (métadonnées FAISS)
+from pathlib import Path  # Pour gérer les chemins de fichiers de manière portable
+import faiss              # FAISS : moteur de recherche vectorielle (indexation et recherche de vecteurs)
+from dotenv import load_dotenv  # Pour charger les variables d'environnement depuis un fichier .env
 
-from langchain_community.vectorstores import FAISS
-from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.documents import Document
-from langchain_community.docstore.in_memory import InMemoryDocstore
+from langchain_community.vectorstores import FAISS # Wrapper LangChain pour utiliser un index FAISS avec des documents et le LLM dans un pipeline RAG
+from langchain_mistralai import ChatMistralAI, MistralAIEmbeddings # ChatMistralAI : génération de texte / réponses type chat via Mistral. MistralAIEmbeddings : génération d'embeddings via Mistral 
+from langchain_classic.chains import create_retrieval_chain # Crée une chaîne RAG : prend un retriever + une chaîne de documents et renvoie un objet qui récupère automatiquement les documents pertinents et génère une réponse avec le LLM.
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain # Crée une chaîne qui combine plusieurs documents récupérés par le retriever et les passe au LLM pour générer une réponse unique
+from langchain_core.prompts import ChatPromptTemplate # Permet de créer des templates de prompts pour le LLM
+from langchain_core.documents import Document # Classe qui représente un document avec son texte et ses métadonnées. Utilisé pour stocker et manipuler les textes que le LLM va lire via le retriever.
+from langchain_community.docstore.in_memory import InMemoryDocstore # Stocke les documents en mémoire et fait le lien entre les positions FAISS et les documents réels. Permet au retriever de retourner le texte associé aux vecteurs de l'index.
 
 # -----------------------------
 # CONFIG
@@ -59,8 +59,8 @@ documents = [
 # BUILD VECTORSTORE LANGCHAIN
 # -----------------------------
 
-# Création d'un docstore compatible LangChain, il assure la correspondance entre les index FAISS et les documents (chunk) LangChain
-# stocke les documents en mémoire
+# Création d'un docstore compatible LangChain, il assure la correspondance entre les index FAISS et les documents réels (chunk) LangChain
+# stocke les documents en mémoire et permet au retriever de récupérer le texte et les métadonnées associés à chaque vecteur de l'index FAISS pour le LLM
 docstore = InMemoryDocstore(
     {str(i): doc for i, doc in enumerate(documents)}
 )

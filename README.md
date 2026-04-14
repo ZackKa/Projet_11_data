@@ -102,7 +102,9 @@ pip install --upgrade pip
 ```bash
 pip install -r requirements.txt
 ```
-Attention si requirements provoque une erreur, il faut changer la ligne qui ressemble à `packaging @ file:///C:/...` dans le fichier `requirements.txt`, par juste cette ligne `packaging`.
+Si une erreur apparaît lors de l’installation, vérifiez simplement que :
+- votre environnement conda est bien activé
+- le fichier `requirements.txt` est bien généré à partir du projet
 
 
 ## Vérification de l’installation
